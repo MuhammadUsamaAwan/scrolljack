@@ -125,7 +125,6 @@ func (a *App) ProcessWabbajackFile() {
 		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("❌ Failed to save mod archives: %v", err))
 		return
 	}
-	log.Println("Mod archives saved:", len(archives))
 	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Mod archives saved in %s", utils.FormatDuration(time.Since(start))))
 
 	// Save the mod files to the database
@@ -136,7 +135,6 @@ func (a *App) ProcessWabbajackFile() {
 		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("❌ Failed to save mod files: %v", err))
 		return
 	}
-	log.Println("Mod files saved:", len(files))
 	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Mod files saved in %s", utils.FormatDuration(time.Since(start))))
 
 	// Save the mod file archive links to the database

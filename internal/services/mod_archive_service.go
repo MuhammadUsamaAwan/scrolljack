@@ -9,74 +9,106 @@ import (
 	modlist "scrolljack/internal/types"
 	"scrolljack/internal/utils"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 )
 
 func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *modlist.Modlist) ([]models.ModArchive, error) {
 	const chunkSize = 1000
-	var modArchivesToBeInserted []models.ModArchive
 	var directURLRegex = regexp.MustCompile(`(?m)^directURL=(.*)$`)
 
+	modArchivesChan := make(chan []models.ModArchive, len(mods))
+	var wg sync.WaitGroup
+
 	for _, mod := range mods {
-		var rawModArchives []modlist.Archive
+		wg.Add(1)
+		go func(mod models.Mod) {
+			defer wg.Done()
+			var modArchives []models.ModArchive
+			var rawModArchives []modlist.Archive
 
-		for _, directive := range m.Directives {
-			if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
-				!strings.HasSuffix(directive.To, "meta.ini") {
+			for _, directive := range m.Directives {
+				if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
+					!strings.HasSuffix(directive.To, "meta.ini") {
 
-				switch directive.Type {
-				case "FromArchive", "PatchedFromArchive":
-					if len(directive.ArchiveHashPath) > 0 {
-						hash := directive.ArchiveHashPath[0]
-						for _, archive := range m.Archives {
-							if archive.Hash == hash {
-								rawModArchives = append(rawModArchives, archive)
-								break
+					switch directive.Type {
+					case modlist.FromArchiveType, modlist.PatchedFromArchiveType:
+						if len(directive.ArchiveHashPath) > 0 {
+							hash := directive.ArchiveHashPath[0]
+							for _, archive := range m.Archives {
+								if archive.Hash == hash {
+									rawModArchives = append(rawModArchives, archive)
+									break
+								}
 							}
 						}
-					}
-				case "CreateBSA":
-					for _, archive := range m.Archives {
-						if archive.State != nil && *archive.State.Name == mod.Name {
-							rawModArchives = append(rawModArchives, archive)
+					case modlist.CreateBSAType:
+						for _, archive := range m.Archives {
+							if archive.State != nil && utils.DerefStr(archive.State.Name) == mod.Name {
+								rawModArchives = append(rawModArchives, archive)
+							}
 						}
 					}
 				}
 			}
-		}
 
-		seen := make(map[string]struct{})
-		for _, archive := range rawModArchives {
-			if _, exists := seen[archive.Hash]; exists {
-				continue
-			}
-			seen[archive.Hash] = struct{}{}
+			seen := make(map[string]struct{})
+			for _, archive := range rawModArchives {
+				if _, exists := seen[archive.Hash]; exists {
+					continue
+				}
+				seen[archive.Hash] = struct{}{}
 
-			directURL := ""
-			if matches := directURLRegex.FindStringSubmatch(archive.Meta); len(matches) > 1 {
-				directURL = matches[1]
-			}
+				directURL := ""
+				if matches := directURLRegex.FindStringSubmatch(archive.Meta); len(matches) > 1 {
+					directURL = matches[1]
+				}
 
-			info := models.ModArchive{
-				ID:            uuid.New().String(),
-				ModID:         mod.ID,
-				Hash:          archive.Hash,
-				Type:          string(archive.State.Type),
-				NexusGameName: utils.ToNullString(archive.State.GameName),
-				NexusModID:    utils.ToNullInt(archive.State.ModID),
-				NexusFileID:   utils.ToNullInt(archive.State.FileID),
-				DirectURL:     utils.ToNullString(&directURL),
-				Version:       utils.ToNullString(archive.State.Version),
-				Size:          utils.ToNullInt64(&archive.Size),
-				Description:   utils.ToNullString(archive.State.Description),
+				typ := ""
+				var (
+					nexusGameName, version, description sql.NullString
+					nexusModID, nexusFileID             sql.NullInt64
+				)
+
+				if archive.State != nil {
+					typ = string(archive.State.Type)
+					nexusGameName = utils.ToNullString(archive.State.GameName)
+					version = utils.ToNullString(archive.State.Version)
+					description = utils.ToNullString(archive.State.Description)
+					nexusModID = utils.ToNullInt(archive.State.ModID)
+					nexusFileID = utils.ToNullInt(archive.State.FileID)
+				}
+
+				info := models.ModArchive{
+					ID:            uuid.New().String(),
+					ModID:         mod.ID,
+					Hash:          archive.Hash,
+					Type:          typ,
+					NexusGameName: nexusGameName,
+					NexusModID:    nexusModID,
+					NexusFileID:   nexusFileID,
+					DirectURL:     utils.ToNullString(&directURL),
+					Version:       version,
+					Size:          utils.ToNullInt64(&archive.Size),
+					Description:   description,
+				}
+				modArchives = append(modArchives, info)
 			}
-			modArchivesToBeInserted = append(modArchivesToBeInserted, info)
-		}
+			modArchivesChan <- modArchives
+		}(mod)
+	}
+
+	wg.Wait()
+	close(modArchivesChan)
+
+	var modArchivesToBeInserted []models.ModArchive
+	for archives := range modArchivesChan {
+		modArchivesToBeInserted = append(modArchivesToBeInserted, archives...)
 	}
 
 	if len(modArchivesToBeInserted) == 0 {
-		return []models.ModArchive{}, nil
+		return nil, nil
 	}
 
 	tx, err := db.BeginTx(ctx, nil)
@@ -111,10 +143,10 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 		}
 
 		query := fmt.Sprintf(`
-        INSERT INTO mod_archives (
-            id, mod_id, hash, type, nexus_game_name, nexus_mod_id, nexus_file_id,
-            direct_url, version, size, description
-        ) VALUES %s`,
+            INSERT INTO mod_archives (
+                id, mod_id, hash, type, nexus_game_name, nexus_mod_id, nexus_file_id,
+                direct_url, version, size, description
+            ) VALUES %s`,
 			strings.Join(valueStrings, ","),
 		)
 

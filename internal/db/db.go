@@ -20,8 +20,8 @@ func Connect() {
 	}
 
 	dbPath := filepath.Join(appDir, "db.sqlite")
+	dsn := fmt.Sprintf("file:///%s?_cache=shared&_journal_mode=WAL&_foreign_keys=on", filepath.ToSlash(dbPath))
 
-	dsn := fmt.Sprintf("file:%s?_cache=shared&_journal_mode=WAL&_foreign_keys=on", dbPath)
 	DB, err = sql.Open("sqlite3", dsn)
 	if err != nil {
 		log.Fatal("Failed to open database:", err)

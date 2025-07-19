@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"scrolljack/internal/db/models"
 	modlist "scrolljack/internal/types"
@@ -16,50 +17,65 @@ import (
 
 func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modlist.Modlist, baseModlistPath string) ([]models.ModFile, error) {
 	const chunkSize = 1000
-	var modFilesToBeInserted []models.ModFile
+	modFilesChan := make(chan []models.ModFile, len(mods))
+	var wg sync.WaitGroup
 
 	for _, mod := range mods {
-		var rawModFiles []modlist.Directive
+		wg.Add(1)
+		go func(mod models.Mod) {
+			defer wg.Done()
+			var modFiles []models.ModFile
+			var rawModFiles []modlist.Directive
 
-		for _, directive := range m.Directives {
-			if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
-				!strings.HasSuffix(directive.To, "meta.ini") {
-				rawModFiles = append(rawModFiles, directive)
-			}
-		}
-
-		for _, mf := range rawModFiles {
-			var sourceFilePath sql.NullString
-			var patchFilePath sql.NullString
-
-			if mf.SourceDataID != nil && *mf.SourceDataID != "" {
-				fullPath := filepath.Join(baseModlistPath, *mf.SourceDataID)
-				sourceFilePath = utils.ToNullString(&fullPath)
+			for _, directive := range m.Directives {
+				if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
+					!strings.HasSuffix(directive.To, "meta.ini") {
+					rawModFiles = append(rawModFiles, directive)
+				}
 			}
 
-			if mf.PatchID != nil && *mf.PatchID != "" {
-				fullPath := filepath.Join(baseModlistPath, *mf.PatchID)
-				patchFilePath = utils.ToNullString(&fullPath)
-			}
+			for _, mf := range rawModFiles {
+				var sourceFilePath sql.NullString
+				var patchFilePath sql.NullString
 
-			var fileStatePtrs []*modlist.FileState
-			for i := range mf.FileStates {
-				fileStatePtrs = append(fileStatePtrs, &mf.FileStates[i])
-			}
-			bsaFilesStr := strings.Join(extractPaths(fileStatePtrs), ";")
+				if mf.SourceDataID != nil && *mf.SourceDataID != "" {
+					fullPath := filepath.Join(baseModlistPath, *mf.SourceDataID)
+					sourceFilePath = utils.ToNullString(&fullPath)
+				}
 
-			modFile := models.ModFile{
-				ID:             uuid.New().String(),
-				ModID:          mod.ID,
-				Hash:           mf.Hash,
-				Type:           string(mf.Type),
-				Path:           strings.Replace(mf.To, fmt.Sprintf("mods\\%s\\", mod.Name), "", 1),
-				SourceFilePath: sourceFilePath,
-				PatchFilePath:  patchFilePath,
-				BsaFiles:       utils.ToNullString(&bsaFilesStr),
+				if mf.PatchID != nil && *mf.PatchID != "" {
+					fullPath := filepath.Join(baseModlistPath, *mf.PatchID)
+					patchFilePath = utils.ToNullString(&fullPath)
+				}
+
+				var fileStatePtrs []*modlist.FileState
+				for i := range mf.FileStates {
+					fileStatePtrs = append(fileStatePtrs, &mf.FileStates[i])
+				}
+				bsaFilesStr := strings.Join(extractPaths(fileStatePtrs), ";")
+
+				modFile := models.ModFile{
+					ID:             uuid.New().String(),
+					ModID:          mod.ID,
+					Hash:           mf.Hash,
+					Type:           string(mf.Type),
+					Path:           strings.Replace(mf.To, fmt.Sprintf("mods\\%s\\", mod.Name), "", 1),
+					SourceFilePath: sourceFilePath,
+					PatchFilePath:  patchFilePath,
+					BsaFiles:       utils.ToNullString(&bsaFilesStr),
+				}
+				modFiles = append(modFiles, modFile)
 			}
-			modFilesToBeInserted = append(modFilesToBeInserted, modFile)
-		}
+			modFilesChan <- modFiles
+		}(mod)
+	}
+
+	wg.Wait()
+	close(modFilesChan)
+
+	var modFilesToBeInserted []models.ModFile
+	for files := range modFilesChan {
+		modFilesToBeInserted = append(modFilesToBeInserted, files...)
 	}
 
 	if len(modFilesToBeInserted) == 0 {
