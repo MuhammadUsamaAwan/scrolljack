@@ -1,14 +1,16 @@
 package models
 
+import "database/sql"
+
 type ModArchive struct {
-	ID            string `db:"id"`
-	ModID         string `db:"mod_id"`
-	Type          string `db:"type"`
-	NexusGameName string `db:"nexus_game_name"`
-	NexusModID    int    `db:"nexus_mod_id"`
-	NexusFileID   int    `db:"nexus_file_id"`
-	DirectURL     string `db:"direct_url"`
-	Version       string `db:"version"`
-	Size          int    `db:"size"`
-	Description   string `db:"description"`
+	ID            string         `db:"id"`
+	ModID         string         `db:"mod_id"`
+	Type          string         `db:"type"`
+	NexusGameName sql.NullString `db:"nexus_game_name"`
+	NexusModID    sql.NullInt64  `db:"nexus_mod_id"`
+	NexusFileID   sql.NullInt64  `db:"nexus_file_id"`
+	DirectURL     sql.NullString `db:"direct_url"`
+	Version       sql.NullString `db:"version"`
+	Size          sql.NullInt64  `db:"size"`
+	Description   sql.NullString `db:"description"`
 }

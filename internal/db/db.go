@@ -19,7 +19,7 @@ func Connect() {
 		log.Fatal("Failed to get app directory:", err)
 	}
 
-	dbPath := filepath.Join(appDir, "app.db")
+	dbPath := filepath.Join(appDir, "db.sqlite")
 
 	dsn := fmt.Sprintf("file:%s?_cache=shared&_journal_mode=WAL&_foreign_keys=on", dbPath)
 	DB, err = sql.Open("sqlite3", dsn)

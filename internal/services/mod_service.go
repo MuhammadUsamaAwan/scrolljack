@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -52,7 +51,7 @@ func InsertMods(ctx context.Context, db *sql.DB, profiles *[]models.Profile, mod
 	}
 
 	if len(modsToBeInserted) == 0 {
-		return nil, errors.New("no mods found in the modlist")
+		return []models.Mod{}, nil
 	}
 
 	tx, err := db.BeginTx(ctx, nil)
