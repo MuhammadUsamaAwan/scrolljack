@@ -12,7 +12,7 @@
       "!**/.turbo",
       "!**/.next",
       "!**/routeTree.gen.ts",
-      "!**/wails"
+      "!**/wailsjs"
     ]
   },
   "formatter": {
@@ -34,7 +34,7 @@
       "!**/.turbo",
       "!**/.next",
       "!**/routeTree.gen.ts",
-      "!**/wails"
+      "!**/wailsjs"
     ]
   },
   "javascript": {
@@ -97,7 +97,7 @@
       "!**/.turbo",
       "!**/.next",
       "!**/routeTree.gen.ts",
-      "!**/wails"
+      "!**/wailsjs"
     ]
   }
 }

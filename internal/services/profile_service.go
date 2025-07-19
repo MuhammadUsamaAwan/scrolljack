@@ -38,10 +38,10 @@ func InsertProfile(modlistId string, modlist *modlist.Modlist) ([]models.Profile
 		valueArgs = append(valueArgs, profile.ID, profile.ModlistID, profile.Name)
 	}
 
-	stmt := fmt.Sprintf("INSERT INTO profiles (id, modlist_id, name) VALUES %s", strings.Join(valueStrings, ","))
-	_, err := db.DB.ExecContext(context.Background(), stmt, valueArgs...)
+	query := fmt.Sprintf("INSERT INTO profiles (id, modlist_id, name) VALUES %s", strings.Join(valueStrings, ","))
+	_, err := db.DB.ExecContext(context.Background(), query, valueArgs...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to batch insert profiles: %w", err)
+		return nil, fmt.Errorf("failed to insert profiles into database: %w", err)
 	}
 
 	return profilesToBeInserted, nil

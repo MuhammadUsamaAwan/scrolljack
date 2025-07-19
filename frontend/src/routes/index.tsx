@@ -1,26 +1,22 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 import { Hero } from '~/components/hero';
 import { Button } from '~/components/ui/button';
 import { ProcessWabbajackFile } from '~/wailsjs/go/main/App';
-import { EventsOn } from "~/wailsjs/runtime";
-
+import { EventsOn } from '~/wailsjs/runtime';
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-   const [progress, setProgress] = useState<string[]>([]);
+  const [progress, setProgress] = useState<string[]>([]);
 
-    useEffect(() => {
-        EventsOn("progress_update", (data) => {
-            setProgress(prev => [...prev, data]);
-        });
-    }, []);
-
-
+  useEffect(() => {
+    EventsOn('progress_update', data => {
+      setProgress(prev => [...prev, data]);
+    });
+  }, []);
 
   return (
     <main className='container mx-auto space-y-8 px-4 py-10'>
@@ -30,11 +26,7 @@ function RouteComponent() {
           size='lg'
           onClick={async () => {
             setProgress([]);
-            try {
-              await ProcessWabbajackFile();
-            } catch (error) {
-              toast.error(`Error processing Wabbajack file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            await ProcessWabbajackFile();
           }}
         >
           Select a Wabbajack file

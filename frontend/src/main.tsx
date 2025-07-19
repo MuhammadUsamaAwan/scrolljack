@@ -5,7 +5,7 @@ import { queryClient } from '~/lib/query-client';
 import { router } from '~/lib/router';
 
 createRoot(document.getElementById('root')!).render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+  <QueryClientProvider client={queryClient}>
+    <RouterProvider router={router} />
+  </QueryClientProvider>
 );
