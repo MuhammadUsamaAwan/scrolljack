@@ -6,6 +6,7 @@ import (
 	"log"
 	"path/filepath"
 	"scrolljack/internal/db"
+	"scrolljack/internal/db/dtos"
 	"scrolljack/internal/services"
 	"scrolljack/internal/utils"
 	"time"
@@ -148,4 +149,27 @@ func (a *App) ProcessWabbajackFile() {
 
 	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("🎉 Modlist import completed in %s", utils.FormatDuration(time.Since(globalStart))))
 
+}
+
+func (a *App) GetModlists() ([]*dtos.ModlistDTO, error) {
+	modlists, err := services.GetModlists(a.ctx, db.DB)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve modlists: %w", err)
+	}
+	return modlists, nil
+}
+
+func (a *App) GetModlistImageBase64(modlistId string, image string) (string, error) {
+	base64Image, err := services.GetModlistImageBase64(modlistId, image)
+	if err != nil {
+		return "", fmt.Errorf("failed to get modlist image: %w", err)
+	}
+	return base64Image, nil
+}
+
+func (a *App) DeleteModlist(modlistId string) error {
+	if err := services.DeleteModlist(a.ctx, db.DB, modlistId); err != nil {
+		return fmt.Errorf("failed to delete modlist: %w", err)
+	}
+	return nil
 }
