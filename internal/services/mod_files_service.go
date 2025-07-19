@@ -1,0 +1,124 @@
+package services
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"path/filepath"
+	"strings"
+
+	"scrolljack/internal/db/models"
+	modlist "scrolljack/internal/types"
+	"scrolljack/internal/utils"
+
+	"github.com/google/uuid"
+)
+
+func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modlist.Modlist, baseModlistPath string) ([]models.ModFile, error) {
+	const chunkSize = 1000
+	var modFilesToBeInserted []models.ModFile
+
+	for _, mod := range mods {
+		var rawModFiles []modlist.Directive
+
+		for _, directive := range m.Directives {
+			if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
+				!strings.HasSuffix(directive.To, "meta.ini") {
+				rawModFiles = append(rawModFiles, directive)
+			}
+		}
+
+		for _, mf := range rawModFiles {
+			var sourceFilePath sql.NullString
+			var patchFilePath sql.NullString
+
+			if mf.SourceDataID != nil && *mf.SourceDataID != "" {
+				fullPath := filepath.Join(baseModlistPath, *mf.SourceDataID)
+				sourceFilePath = utils.ToNullString(&fullPath)
+			}
+
+			if mf.PatchID != nil && *mf.PatchID != "" {
+				fullPath := filepath.Join(baseModlistPath, *mf.PatchID)
+				patchFilePath = utils.ToNullString(&fullPath)
+			}
+
+			var fileStatePtrs []*modlist.FileState
+			for i := range mf.FileStates {
+				fileStatePtrs = append(fileStatePtrs, &mf.FileStates[i])
+			}
+			bsaFilesStr := strings.Join(extractPaths(fileStatePtrs), ";")
+
+			modFile := models.ModFile{
+				ID:             uuid.New().String(),
+				ModID:          mod.ID,
+				Hash:           mf.Hash,
+				Type:           string(mf.Type),
+				Path:           strings.Replace(mf.To, fmt.Sprintf("mods\\%s\\", mod.Name), "", 1),
+				SourceFilePath: sourceFilePath,
+				PatchFilePath:  patchFilePath,
+				BsaFiles:       utils.ToNullString(&bsaFilesStr),
+			}
+			modFilesToBeInserted = append(modFilesToBeInserted, modFile)
+		}
+	}
+
+	if len(modFilesToBeInserted) == 0 {
+		return []models.ModFile{}, nil
+	}
+
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction while inserting mod files: %w", err)
+	}
+	defer tx.Rollback()
+
+	for i := 0; i < len(modFilesToBeInserted); i += chunkSize {
+		chunkEnd := min(i+chunkSize, len(modFilesToBeInserted))
+		chunk := modFilesToBeInserted[i:chunkEnd]
+
+		var (
+			valueStrings []string
+			valueArgs    []any
+		)
+		for _, file := range chunk {
+			valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?)")
+			valueArgs = append(valueArgs,
+				file.ID,
+				file.ModID,
+				file.Hash,
+				file.Type,
+				file.Path,
+				file.SourceFilePath,
+				file.PatchFilePath,
+				file.BsaFiles,
+			)
+		}
+
+		query := fmt.Sprintf(`
+        INSERT INTO mod_files (
+            id, mod_id, hash, type, path, source_file_path, patch_file_path, bsa_files
+        ) VALUES %s`,
+			strings.Join(valueStrings, ","),
+		)
+
+		if _, err := tx.ExecContext(ctx, query, valueArgs...); err != nil {
+			return nil, fmt.Errorf("failed to insert mod files in database: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("transaction commit failed while inserting mod files: %w", err)
+	}
+
+	return modFilesToBeInserted, nil
+}
+
+func extractPaths(states []*modlist.FileState) []string {
+	var paths []string
+	for _, fs := range states {
+		if fs != nil {
+			paths = append(paths, fs.Path)
+		}
+	}
+	return paths
+}
