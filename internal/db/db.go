@@ -100,7 +100,7 @@ func runMigrations() {
 		CREATE TABLE IF NOT EXISTS "mod_archives" (
 			"id" text PRIMARY KEY NOT NULL,
 			"mod_id" text NOT NULL,
-			"archive_type" text,
+			"type" text,
 			"nexus_game_name" text,
 			"nexus_mod_id" integer,
 			"nexus_file_id" integer,

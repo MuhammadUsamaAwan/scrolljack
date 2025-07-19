@@ -62,24 +62,33 @@ func (a *App) ProcessWabbajackFile() error {
 	if err := utils.ExtractArchive(result, path); err != nil {
 		return err
 	}
-	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Extraction completed in %s", time.Since(start)))
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Extraction completed in %s", utils.FormatDuration(time.Since(start))))
 
 	// Read the modlist file
 	start = time.Now()
 	runtime.EventsEmit(a.ctx, "progress_update", "📖 Reading modlist file...")
-	m, err := utils.LoadModlist(path)
+	modlist, err := utils.LoadModlist(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Modlist read in %s", time.Since(start)))
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Modlist read in %s", utils.FormatDuration(time.Since(start))))
 
 	// Save the modlist to the database
 	start = time.Now()
 	runtime.EventsEmit(a.ctx, "progress_update", "💾 Saving modlist to database...")
-	if err := services.InsertModlist(modlistId, m); err != nil {
+	if err := services.InsertModlist(modlistId, modlist); err != nil {
 		return fmt.Errorf("failed to insert modlist into database: %w", err)
 	}
-	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Modlist saved in %s", time.Since(start)))
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Modlist saved in %s", utils.FormatDuration(time.Since(start))))
+
+	// Get the profiles from the modlist
+	start = time.Now()
+	runtime.EventsEmit(a.ctx, "progress_update", "📂 Processing profiles...")
+	profiles, err := services.InsertProfile(modlistId, modlist)
+	if err != nil {
+		return fmt.Errorf("failed to insert profiles into database: %w", err)
+	}
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ %d profiles processed in %s", len(profiles), utils.FormatDuration(time.Since(start))))
 
 	return nil
 }
