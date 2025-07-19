@@ -139,6 +139,15 @@ func (a *App) ProcessWabbajackFile() {
 	log.Println("Mod files saved:", len(files))
 	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Mod files saved in %s", utils.FormatDuration(time.Since(start))))
 
+	// Save the mod file archive links to the database
+	start = time.Now()
+	runtime.EventsEmit(a.ctx, "progress_update", "🔗 Saving mod file archive links...")
+	if err := services.InsertModFileArchiveLinks(a.ctx, db.DB, modlistId, mods, files, archives, modlist); err != nil {
+		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("❌ Failed to save mod file archive links: %v", err))
+		return
+	}
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Mod file archive links saved in %s", utils.FormatDuration(time.Since(start))))
+
 	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("🎉 Modlist import completed in %s", utils.FormatDuration(time.Since(globalStart))))
 
 }

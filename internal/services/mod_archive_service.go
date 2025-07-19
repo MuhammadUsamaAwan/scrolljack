@@ -61,6 +61,7 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 			info := models.ModArchive{
 				ID:            uuid.New().String(),
 				ModID:         mod.ID,
+				Hash:          archive.Hash,
 				Type:          string(archive.State.Type),
 				NexusGameName: utils.ToNullString(archive.State.GameName),
 				NexusModID:    utils.ToNullInt(archive.State.ModID),
@@ -93,10 +94,11 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 			valueArgs    []any
 		)
 		for _, archive := range chunk {
-			valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+			valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 			valueArgs = append(valueArgs,
 				archive.ID,
 				archive.ModID,
+				archive.Hash,
 				archive.Type,
 				archive.NexusGameName,
 				archive.NexusModID,
@@ -110,7 +112,7 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 
 		query := fmt.Sprintf(`
         INSERT INTO mod_archives (
-            id, mod_id, type, nexus_game_name, nexus_mod_id, nexus_file_id,
+            id, mod_id, hash, type, nexus_game_name, nexus_mod_id, nexus_file_id,
             direct_url, version, size, description
         ) VALUES %s`,
 			strings.Join(valueStrings, ","),

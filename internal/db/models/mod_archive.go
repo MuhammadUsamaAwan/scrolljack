@@ -5,6 +5,7 @@ import "database/sql"
 type ModArchive struct {
 	ID            string         `db:"id"`
 	ModID         string         `db:"mod_id"`
+	Hash          string         `db:"hash"`
 	Type          string         `db:"type"`
 	NexusGameName sql.NullString `db:"nexus_game_name"`
 	NexusModID    sql.NullInt64  `db:"nexus_mod_id"`
