@@ -6,6 +6,7 @@ import (
 	"log"
 	"path/filepath"
 	"scrolljack/internal/db"
+	"scrolljack/internal/services"
 	"scrolljack/internal/utils"
 	"time"
 
@@ -61,7 +62,24 @@ func (a *App) ProcessWabbajackFile() error {
 	if err := utils.ExtractArchive(result, path); err != nil {
 		return err
 	}
-	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Extraction completed in %s", time.Since(start).String()))
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Extraction completed in %s", time.Since(start)))
+
+	// Read the modlist file
+	start = time.Now()
+	runtime.EventsEmit(a.ctx, "progress_update", "📖 Reading modlist file...")
+	m, err := utils.LoadModlist(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Modlist read in %s", time.Since(start)))
+
+	// Save the modlist to the database
+	start = time.Now()
+	runtime.EventsEmit(a.ctx, "progress_update", "💾 Saving modlist to database...")
+	if err := services.InsertModlist(modlistId, m); err != nil {
+		return fmt.Errorf("failed to insert modlist into database: %w", err)
+	}
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Modlist saved in %s", time.Since(start)))
 
 	return nil
 }
