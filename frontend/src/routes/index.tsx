@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Hero } from '~/components/hero';
 import { Button } from '~/components/ui/button';
 import { ProcessWabbajackFile } from '~/wailsjs/go/main/App';
@@ -11,12 +11,19 @@ export const Route = createFileRoute('/')({
 
 function RouteComponent() {
   const [progress, setProgress] = useState<string[]>([]);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     EventsOn('progress_update', data => {
       setProgress(prev => [...prev, data]);
     });
   }, []);
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [progress]);
 
   return (
     <main className='container mx-auto space-y-8 px-4 py-10'>
@@ -39,6 +46,7 @@ function RouteComponent() {
           ))}
         </div>
       )}
+      <div ref={bottomRef} />
     </main>
   );
 }

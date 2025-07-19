@@ -61,6 +61,7 @@ func (a *App) ProcessWabbajackFile() {
 
 	// Extract the Wabbajack file to the modlists directory
 	runtime.EventsEmit(a.ctx, "progress_update", "📦 Extracting file...")
+	globalStart := time.Now()
 	start := time.Now()
 	path := filepath.Join(appDir, "modlists", modlistId)
 	if err := utils.ExtractArchive(result, path); err != nil {
@@ -81,7 +82,7 @@ func (a *App) ProcessWabbajackFile() {
 	// Save the modlist to the database
 	start = time.Now()
 	runtime.EventsEmit(a.ctx, "progress_update", "💾 Saving modlist to database...")
-	if err := services.InsertModlist(modlistId, modlist); err != nil {
+	if err := services.InsertModlist(a.ctx, db.DB, modlistId, modlist); err != nil {
 		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("Failed to save modlist: %v", err))
 		return
 	}
@@ -90,7 +91,7 @@ func (a *App) ProcessWabbajackFile() {
 	// Save the profiles to the database
 	start = time.Now()
 	runtime.EventsEmit(a.ctx, "progress_update", "📂 Saving profiles to database...")
-	profiles, err := services.InsertProfile(modlistId, modlist)
+	profiles, err := services.InsertProfile(a.ctx, db.DB, modlistId, modlist)
 	if err != nil {
 		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("❌ Failed to save profiles: %v", err))
 		return
@@ -100,10 +101,21 @@ func (a *App) ProcessWabbajackFile() {
 	// Save the profile files to the database
 	start = time.Now()
 	runtime.EventsEmit(a.ctx, "progress_update", "📄 Saving profile files to database...")
-	if err := services.InsertProfileFiles(&profiles, modlist, path); err != nil {
+	if err := services.InsertProfileFiles(a.ctx, db.DB, &profiles, modlist, path); err != nil {
 		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("❌ Failed to save profile files: %v", err))
 		return
 	}
 	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Profile files saved in %s", utils.FormatDuration(time.Since(start))))
+
+	// Save the mods to the database
+	start = time.Now()
+	runtime.EventsEmit(a.ctx, "progress_update", "🔧 Saving mods to database...")
+	if _, err := services.InsertMods(a.ctx, db.DB, &profiles, modlist, path); err != nil {
+		runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("❌ Failed to save mods: %v", err))
+		return
+	}
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("✅ Mods saved in %s", utils.FormatDuration(time.Since(start))))
+
+	runtime.EventsEmit(a.ctx, "progress_update", fmt.Sprintf("🎉 Modlist import completed in %s", utils.FormatDuration(time.Since(globalStart))))
 
 }

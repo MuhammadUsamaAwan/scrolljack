@@ -2,8 +2,8 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"scrolljack/internal/db"
 	"scrolljack/internal/db/models"
 	modlist "scrolljack/internal/types"
 	"strings"
@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func InsertProfile(modlistId string, modlist *modlist.Modlist) ([]models.Profile, error) {
+func InsertProfile(ctx context.Context, db *sql.DB, modlistId string, modlist *modlist.Modlist) ([]models.Profile, error) {
 	var profilesToBeInserted []models.Profile
 	for _, d := range modlist.Directives {
 		if strings.HasPrefix(d.To, "profiles\\") && strings.HasSuffix(d.To, "\\modlist.txt") {
@@ -39,7 +39,7 @@ func InsertProfile(modlistId string, modlist *modlist.Modlist) ([]models.Profile
 	}
 
 	query := fmt.Sprintf("INSERT INTO profiles (id, modlist_id, name) VALUES %s", strings.Join(valueStrings, ","))
-	_, err := db.DB.ExecContext(context.Background(), query, valueArgs...)
+	_, err := db.ExecContext(ctx, query, valueArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert profiles into database: %w", err)
 	}

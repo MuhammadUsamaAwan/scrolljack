@@ -2,14 +2,14 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"scrolljack/internal/db"
 	modlist "scrolljack/internal/types"
 )
 
-func InsertModlist(modlistId string, modlist *modlist.Modlist) error {
-	_, err := db.DB.ExecContext(
-		context.Background(),
+func InsertModlist(ctx context.Context, db *sql.DB, modlistId string, modlist *modlist.Modlist) error {
+	_, err := db.ExecContext(
+		ctx,
 		`INSERT INTO modlists (id, name, author, description, game_type, image, readme, website, version, is_nsfw)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		modlistId,

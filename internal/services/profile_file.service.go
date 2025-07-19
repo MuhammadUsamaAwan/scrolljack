@@ -2,9 +2,9 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"path/filepath"
-	"scrolljack/internal/db"
 	"scrolljack/internal/db/models"
 	modlist "scrolljack/internal/types"
 	"strings"
@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func InsertProfileFiles(profiles *[]models.Profile, modlist *modlist.Modlist, baseModlistPath string) error {
+func InsertProfileFiles(ctx context.Context, db *sql.DB, profiles *[]models.Profile, modlist *modlist.Modlist, baseModlistPath string) error {
 	var profileFilesToBeInserted []models.ProfileFile
 
 	for _, profile := range *profiles {
@@ -62,7 +62,7 @@ func InsertProfileFiles(profiles *[]models.Profile, modlist *modlist.Modlist, ba
 
 	query := fmt.Sprintf(`INSERT INTO profile_files (id, profile_id, name, file_path) VALUES %s`, strings.Join(valueStrings, ","))
 
-	_, err := db.DB.ExecContext(context.Background(), query, valueArgs...)
+	_, err := db.ExecContext(ctx, query, valueArgs...)
 	if err != nil {
 		return fmt.Errorf("failed to insert profile files into database: %w", err)
 	}
