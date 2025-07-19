@@ -18,7 +18,7 @@ func InsertModFileArchiveLinks(
 	mods []models.Mod,
 	modFiles []models.ModFile,
 	modArchives []models.ModArchive,
-	modlist *modlist.Modlist,
+	m *modlist.Modlist,
 ) error {
 	hashToArchiveID := make(map[string]string, len(modArchives))
 	for _, archive := range modArchives {
@@ -33,49 +33,68 @@ func InsertModFileArchiveLinks(
 		modFileMap[mf.ModID][mf.Path] = mf.ID
 	}
 
+	directivesByMod := make(map[string][]modlist.Directive)
+	for _, directive := range m.Directives {
+		if len(directive.ArchiveHashPath) == 0 {
+			continue
+		}
+
+		if strings.HasPrefix(directive.To, "mods\\") && !strings.HasSuffix(directive.To, "meta.ini") {
+			parts := strings.Split(directive.To, "\\")
+			if len(parts) >= 2 {
+				modName := parts[1]
+				directivesByMod[modName] = append(directivesByMod[modName], directive)
+			}
+		}
+	}
+
 	const chunkSize = 1000
 	var linksMu sync.Mutex
 	var linksToInsert []models.ModFileArchive
 
 	var wg sync.WaitGroup
-	wg.Add(len(mods))
 
 	for _, mod := range mods {
-		mod := mod // capture range variable
-		go func() {
+		relevantDirectives, hasDirectives := directivesByMod[mod.Name]
+		if !hasDirectives {
+			continue
+		}
+
+		wg.Add(1)
+		go func(mod models.Mod, directives []modlist.Directive) {
 			defer wg.Done()
-			var links []models.ModFileArchive
-			for _, directive := range modlist.Directives {
-				if !strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) ||
-					strings.HasSuffix(directive.To, "meta.ini") {
-					continue
-				}
-				if len(directive.ArchiveHashPath) == 0 {
+
+			links := make([]models.ModFileArchive, 0, len(directives))
+
+			modPathPrefix := fmt.Sprintf("mods\\%s\\", mod.Name)
+			filesForMod, hasFiles := modFileMap[mod.ID]
+			if !hasFiles {
+				return
+			}
+
+			for _, directive := range directives {
+				archiveID, archiveExists := hashToArchiveID[directive.ArchiveHashPath[0]]
+				if !archiveExists {
 					continue
 				}
 
-				archiveID, ok := hashToArchiveID[directive.ArchiveHashPath[0]]
-				if !ok {
-					continue
-				}
-				relativePath := strings.Replace(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name), "", 1)
+				relativePath := strings.TrimPrefix(directive.To, modPathPrefix)
 
-				if filesForMod, ok := modFileMap[mod.ID]; ok {
-					if fileID, ok := filesForMod[relativePath]; ok {
-						links = append(links, models.ModFileArchive{
-							ModlistId:    modlistID,
-							ModFileId:    fileID,
-							ModArchiveId: archiveID,
-						})
-					}
+				if fileID, fileExists := filesForMod[relativePath]; fileExists {
+					links = append(links, models.ModFileArchive{
+						ModlistId:    modlistID,
+						ModFileId:    fileID,
+						ModArchiveId: archiveID,
+					})
 				}
 			}
+
 			if len(links) > 0 {
 				linksMu.Lock()
 				linksToInsert = append(linksToInsert, links...)
 				linksMu.Unlock()
 			}
-		}()
+		}(mod, relevantDirectives)
 	}
 	wg.Wait()
 

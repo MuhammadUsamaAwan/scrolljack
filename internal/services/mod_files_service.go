@@ -17,6 +17,18 @@ import (
 
 func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modlist.Modlist, baseModlistPath string) ([]models.ModFile, error) {
 	const chunkSize = 1000
+
+	directivesByMod := make(map[string][]modlist.Directive)
+	for _, directive := range m.Directives {
+		if strings.HasPrefix(directive.To, "mods\\") && !strings.HasSuffix(directive.To, "meta.ini") {
+			parts := strings.Split(directive.To, "\\")
+			if len(parts) >= 2 {
+				modName := parts[1]
+				directivesByMod[modName] = append(directivesByMod[modName], directive)
+			}
+		}
+	}
+
 	modFilesChan := make(chan []models.ModFile, len(mods))
 	var wg sync.WaitGroup
 
@@ -24,15 +36,16 @@ func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modli
 		wg.Add(1)
 		go func(mod models.Mod) {
 			defer wg.Done()
-			var modFiles []models.ModFile
-			var rawModFiles []modlist.Directive
 
-			for _, directive := range m.Directives {
-				if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
-					!strings.HasSuffix(directive.To, "meta.ini") {
-					rawModFiles = append(rawModFiles, directive)
-				}
+			rawModFiles, exists := directivesByMod[mod.Name]
+			if !exists {
+				modFilesChan <- []models.ModFile{}
+				return
 			}
+
+			modFiles := make([]models.ModFile, 0, len(rawModFiles))
+
+			modPathPrefix := fmt.Sprintf("mods\\%s\\", mod.Name)
 
 			for _, mf := range rawModFiles {
 				var sourceFilePath sql.NullString
@@ -48,18 +61,20 @@ func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modli
 					patchFilePath = utils.ToNullString(&fullPath)
 				}
 
-				var fileStatePtrs []*modlist.FileState
+				fileStatePtrs := make([]*modlist.FileState, 0, len(mf.FileStates))
 				for i := range mf.FileStates {
 					fileStatePtrs = append(fileStatePtrs, &mf.FileStates[i])
 				}
 				bsaFilesStr := strings.Join(extractPaths(fileStatePtrs), ";")
+
+				relativePath := strings.TrimPrefix(mf.To, modPathPrefix)
 
 				modFile := models.ModFile{
 					ID:             uuid.New().String(),
 					ModID:          mod.ID,
 					Hash:           mf.Hash,
 					Type:           string(mf.Type),
-					Path:           strings.Replace(mf.To, fmt.Sprintf("mods\\%s\\", mod.Name), "", 1),
+					Path:           relativePath,
 					SourceFilePath: sourceFilePath,
 					PatchFilePath:  patchFilePath,
 					BsaFiles:       utils.ToNullString(&bsaFilesStr),
@@ -130,7 +145,7 @@ func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modli
 }
 
 func extractPaths(states []*modlist.FileState) []string {
-	var paths []string
+	paths := make([]string, 0, len(states))
 	for _, fs := range states {
 		if fs != nil {
 			paths = append(paths, fs.Path)

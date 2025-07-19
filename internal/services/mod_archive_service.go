@@ -18,6 +18,19 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 	const chunkSize = 1000
 	var directURLRegex = regexp.MustCompile(`(?m)^directURL=(.*)$`)
 
+	archivesByHash := make(map[string]modlist.Archive)
+	for _, archive := range m.Archives {
+		archivesByHash[archive.Hash] = archive
+	}
+
+	archivesByName := make(map[string][]modlist.Archive)
+	for _, archive := range m.Archives {
+		if archive.State != nil && archive.State.Name != nil {
+			name := utils.DerefStr(archive.State.Name)
+			archivesByName[name] = append(archivesByName[name], archive)
+		}
+	}
+
 	modArchivesChan := make(chan []models.ModArchive, len(mods))
 	var wg sync.WaitGroup
 
@@ -28,26 +41,23 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 			var modArchives []models.ModArchive
 			var rawModArchives []modlist.Archive
 
+			modPathPrefix := fmt.Sprintf("mods\\%s\\", mod.Name)
+
 			for _, directive := range m.Directives {
-				if strings.HasPrefix(directive.To, fmt.Sprintf("mods\\%s\\", mod.Name)) &&
+				if strings.HasPrefix(directive.To, modPathPrefix) &&
 					!strings.HasSuffix(directive.To, "meta.ini") {
 
 					switch directive.Type {
 					case modlist.FromArchiveType, modlist.PatchedFromArchiveType:
 						if len(directive.ArchiveHashPath) > 0 {
 							hash := directive.ArchiveHashPath[0]
-							for _, archive := range m.Archives {
-								if archive.Hash == hash {
-									rawModArchives = append(rawModArchives, archive)
-									break
-								}
+							if archive, exists := archivesByHash[hash]; exists {
+								rawModArchives = append(rawModArchives, archive)
 							}
 						}
 					case modlist.CreateBSAType:
-						for _, archive := range m.Archives {
-							if archive.State != nil && utils.DerefStr(archive.State.Name) == mod.Name {
-								rawModArchives = append(rawModArchives, archive)
-							}
+						if archives, exists := archivesByName[mod.Name]; exists {
+							rawModArchives = append(rawModArchives, archives...)
 						}
 					}
 				}
