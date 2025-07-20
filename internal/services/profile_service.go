@@ -46,3 +46,27 @@ func InsertProfile(ctx context.Context, db *sql.DB, modlistId string, modlist *m
 
 	return profilesToBeInserted, nil
 }
+
+func GetProfilesByModlistId(ctx context.Context, db *sql.DB, modlistId string) ([]models.Profile, error) {
+	query := "SELECT id, modlist_id, name FROM profiles WHERE modlist_id = $1"
+	rows, err := db.QueryContext(ctx, query, modlistId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query profiles: %w", err)
+	}
+	defer rows.Close()
+
+	var profiles []models.Profile
+	for rows.Next() {
+		var profile models.Profile
+		if err := rows.Scan(&profile.ID, &profile.ModlistID, &profile.Name); err != nil {
+			return nil, fmt.Errorf("failed to scan profile row: %w", err)
+		}
+		profiles = append(profiles, profile)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during row iteration: %w", err)
+	}
+
+	return profiles, nil
+}

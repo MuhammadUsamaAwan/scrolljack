@@ -18,6 +18,14 @@ export function GetModlists() {
   return window['go']['main']['App']['GetModlists']();
 }
 
+export function GetProfileFilesByProfileId(arg1) {
+  return window['go']['main']['App']['GetProfileFilesByProfileId'](arg1);
+}
+
+export function GetProfilesByModlistId(arg1) {
+  return window['go']['main']['App']['GetProfilesByModlistId'](arg1);
+}
+
 export function ProcessWabbajackFile() {
   return window['go']['main']['App']['ProcessWabbajackFile']();
 }

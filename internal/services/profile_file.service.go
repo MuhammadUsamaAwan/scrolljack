@@ -69,3 +69,27 @@ func InsertProfileFiles(ctx context.Context, db *sql.DB, profiles *[]models.Prof
 
 	return nil
 }
+
+func GetProfileFilesByProfileId(ctx context.Context, db *sql.DB, profileId string) ([]models.ProfileFile, error) {
+	query := "SELECT id, profile_id, name, file_path FROM profile_files WHERE profile_id = $1"
+	rows, err := db.QueryContext(ctx, query, profileId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query profile files: %w", err)
+	}
+	defer rows.Close()
+
+	var profileFiles []models.ProfileFile
+	for rows.Next() {
+		var profileFile models.ProfileFile
+		if err := rows.Scan(&profileFile.ID, &profileFile.ProfileID, &profileFile.Name, &profileFile.FilePath); err != nil {
+			return nil, fmt.Errorf("failed to scan profile file row: %w", err)
+		}
+		profileFiles = append(profileFiles, profileFile)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during row iteration: %w", err)
+	}
+
+	return profileFiles, nil
+}

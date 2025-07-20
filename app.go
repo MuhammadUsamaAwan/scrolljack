@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"scrolljack/internal/db"
 	"scrolljack/internal/db/dtos"
+	"scrolljack/internal/db/models"
 	"scrolljack/internal/services"
 	"scrolljack/internal/utils"
 	"time"
@@ -180,4 +181,20 @@ func (a *App) DeleteModlist(modlistId string) error {
 		return fmt.Errorf("failed to delete modlist: %w", err)
 	}
 	return nil
+}
+
+func (a *App) GetProfilesByModlistId(modlistId string) ([]models.Profile, error) {
+	profiles, err := services.GetProfilesByModlistId(a.ctx, db.DB, modlistId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve profiles by modlist ID: %w", err)
+	}
+	return profiles, nil
+}
+
+func (a *App) GetProfileFilesByProfileId(profileId string) ([]models.ProfileFile, error) {
+	profileFiles, err := services.GetProfileFilesByProfileId(a.ctx, db.DB, profileId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve profile files by profile ID: %w", err)
+	}
+	return profileFiles, nil
 }
