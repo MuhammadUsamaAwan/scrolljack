@@ -7,13 +7,17 @@ export function DeleteModlist(arg1:string):Promise<void>;
 
 export function DownloadFile(arg1:string,arg2:string):Promise<void>;
 
+export function GetModArchivesByModId(arg1:string):Promise<Array<dtos.ModArchiveDTO>>;
+
+export function GetModFilesByModId(arg1:string):Promise<Array<dtos.ModFileDTO>>;
+
 export function GetModlistById(arg1:string):Promise<dtos.ModlistDTO>;
 
 export function GetModlistImageBase64(arg1:string,arg2:string):Promise<string>;
 
 export function GetModlists():Promise<Array<dtos.ModlistDTO>>;
 
-export function GetModsByProfileId(arg1:string):Promise<Array<dtos.GroupedMod>>;
+export function GetModsByProfileId(arg1:string):Promise<Array<dtos.GroupedModDTO>>;
 
 export function GetProfileFilesByProfileId(arg1:string):Promise<Array<models.ProfileFile>>;
 

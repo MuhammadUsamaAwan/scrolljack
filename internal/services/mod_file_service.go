@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"scrolljack/internal/db/dtos"
 	"scrolljack/internal/db/models"
 	modlist "scrolljack/internal/types"
 	"scrolljack/internal/utils"
@@ -152,4 +153,34 @@ func extractPaths(states []*modlist.FileState) []string {
 		}
 	}
 	return paths
+}
+
+func GetModFilesByModId(ctx context.Context, db *sql.DB, modID string) ([]dtos.ModFileDTO, error) {
+	query := `
+		SELECT id, hash, type, path, source_file_path, patch_file_path, bsa_files
+		FROM mod_files
+		WHERE mod_id = $1
+	`
+
+	rows, err := db.QueryContext(ctx, query, modID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query mod files for mod ID %s: %w", modID, err)
+	}
+	defer rows.Close()
+
+	var modFiles []dtos.ModFileDTO
+	for rows.Next() {
+		var file dtos.ModFileDTO
+		if err := rows.Scan(&file.ID, &file.Hash, &file.Type, &file.Path,
+			&file.SourceFilePath, &file.PatchFilePath, &file.BsaFiles); err != nil {
+			return nil, fmt.Errorf("failed to scan mod file row: %w", err)
+		}
+		modFiles = append(modFiles, file)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred while iterating over mod files: %w", err)
+	}
+
+	return modFiles, nil
 }

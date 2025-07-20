@@ -1,5 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import {
+  GetModArchivesByModId,
+  GetModFilesByModId,
   GetModlistById,
   GetModlists,
   GetModsByProfileId,
@@ -43,5 +45,21 @@ export const profileModsQueryOptions = (profileId: string) =>
     queryKey: ['profiles', profileId, 'mods'],
     queryFn: async () => {
       return await GetModsByProfileId(profileId);
+    },
+  });
+
+export const modArchivesQueryOptions = (modId: string) =>
+  queryOptions({
+    queryKey: ['mods', modId, 'archive'],
+    queryFn: async () => {
+      return await GetModArchivesByModId(modId);
+    },
+  });
+
+export const modFilesQueryOptions = (modId: string) =>
+  queryOptions({
+    queryKey: ['mods', modId, 'files'],
+    queryFn: async () => {
+      return await GetModFilesByModId(modId);
     },
   });

@@ -10,6 +10,14 @@ export function DownloadFile(arg1, arg2) {
   return window['go']['main']['App']['DownloadFile'](arg1, arg2);
 }
 
+export function GetModArchivesByModId(arg1) {
+  return window['go']['main']['App']['GetModArchivesByModId'](arg1);
+}
+
+export function GetModFilesByModId(arg1) {
+  return window['go']['main']['App']['GetModFilesByModId'](arg1);
+}
+
 export function GetModlistById(arg1) {
   return window['go']['main']['App']['GetModlistById'](arg1);
 }

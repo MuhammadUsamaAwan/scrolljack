@@ -212,10 +212,26 @@ func (a *App) DownloadFile(path string, name string) error {
 	return nil
 }
 
-func (a *App) GetModsByProfileId(profileId string) ([]dtos.GroupedMod, error) {
+func (a *App) GetModsByProfileId(profileId string) ([]dtos.GroupedModDTO, error) {
 	groupedMods, err := services.GetModsByProfileId(a.ctx, db.DB, profileId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve mods by profile ID: %w", err)
 	}
 	return groupedMods, nil
+}
+
+func (a *App) GetModArchivesByModId(modId string) ([]dtos.ModArchiveDTO, error) {
+	archives, err := services.GetModArchivesByModId(a.ctx, db.DB, modId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve mod archives by mod ID: %w", err)
+	}
+	return archives, nil
+}
+
+func (a *App) GetModFilesByModId(modId string) ([]dtos.ModFileDTO, error) {
+	modFiles, err := services.GetModFilesByModId(a.ctx, db.DB, modId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve mod files by mod ID: %w", err)
+	}
+	return modFiles, nil
 }

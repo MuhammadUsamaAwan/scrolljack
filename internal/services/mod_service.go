@@ -127,9 +127,9 @@ func readModlistFile(filePath string) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func GetModsByProfileId(ctx context.Context, db *sql.DB, profileID string) ([]dtos.GroupedMod, error) {
+func GetModsByProfileId(ctx context.Context, db *sql.DB, profileID string) ([]dtos.GroupedModDTO, error) {
 	query := `
-		SELECT id, profile_id, name, "order", is_separator
+		SELECT id, profile_id, name, "order", mod_order, is_separator, is_active
 		FROM mods
 		WHERE profile_id = ?
 		ORDER BY "order" ASC
@@ -140,27 +140,27 @@ func GetModsByProfileId(ctx context.Context, db *sql.DB, profileID string) ([]dt
 	}
 	defer rows.Close()
 
-	var groupedMods []dtos.GroupedMod
-	var currentGroup *dtos.GroupedMod
+	var groupedMods []dtos.GroupedModDTO
+	var currentGroup *dtos.GroupedModDTO
 
 	for rows.Next() {
-		var mod dtos.Mod
-		if err := rows.Scan(&mod.ID, &mod.ProfileID, &mod.Name, &mod.Order, &mod.IsSeparator); err != nil {
+		var mod dtos.ModDTO
+		if err := rows.Scan(&mod.ID, &mod.ProfileID, &mod.Name, &mod.Order, &mod.ModOrder, &mod.IsSeparator, &mod.IsActive); err != nil {
 			return nil, fmt.Errorf("scan error: %w", err)
 		}
 
 		if mod.IsSeparator {
-			newGroup := dtos.GroupedMod{
+			newGroup := dtos.GroupedModDTO{
 				Separator: mod.Name,
-				Mods:      make([]dtos.Mod, 0),
+				Mods:      make([]dtos.ModDTO, 0),
 			}
 			groupedMods = append(groupedMods, newGroup)
 			currentGroup = &groupedMods[len(groupedMods)-1]
 		} else {
 			if currentGroup == nil {
-				ungrouped := dtos.GroupedMod{
+				ungrouped := dtos.GroupedModDTO{
 					Separator: "Ungrouped",
-					Mods:      make([]dtos.Mod, 0),
+					Mods:      make([]dtos.ModDTO, 0),
 				}
 				groupedMods = append(groupedMods, ungrouped)
 				currentGroup = &groupedMods[len(groupedMods)-1]

@@ -1,17 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { SearchIcon, XIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Mod } from '~/components/mod';
 import { Button } from '~/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import { Input } from '~/components/ui/input';
+import { Spinner } from '~/components/ui/spinner';
 import { profileModsQueryOptions } from '~/lib/query-options';
-import { Spinner } from './spinner';
 
 export function ProfileMods({ profileId }: { profileId: string }) {
   const { data, isPending } = useQuery(profileModsQueryOptions(profileId));
   const [searchTerm, setSearchTerm] = useState('');
-
-  console.log(data);
 
   const filteredMods = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -67,8 +66,7 @@ export function ProfileMods({ profileId }: { profileId: string }) {
             </CollapsibleTrigger>
             <CollapsibleContent className='mt-4 space-y-2'>
               {m.mods.map(mod => (
-                <div key={mod.id}>{mod.name}</div>
-                // <Mod key={mod.id} mod={mod} />
+                <Mod key={mod.id} mod={mod} />
               ))}
             </CollapsibleContent>
           </Collapsible>

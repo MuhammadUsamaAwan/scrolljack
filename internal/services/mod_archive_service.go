@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"regexp"
+	"scrolljack/internal/db/dtos"
 	"scrolljack/internal/db/models"
 	modlist "scrolljack/internal/types"
 	"scrolljack/internal/utils"
@@ -170,4 +172,48 @@ func InsertModArchives(ctx context.Context, db *sql.DB, mods []models.Mod, m *mo
 	}
 
 	return modArchivesToBeInserted, nil
+}
+
+func GetModArchivesByModId(ctx context.Context, db *sql.DB, modID string) ([]dtos.ModArchiveDTO, error) {
+	query := `
+		SELECT id, hash, type, nexus_game_name, nexus_mod_id, nexus_file_id,
+			   direct_url, version, size, description
+		FROM mod_archives
+		WHERE mod_id = $1
+	`
+
+	rows, err := db.QueryContext(ctx, query, modID)
+	if err != nil {
+		log.Printf("Error querying mod archives for mod ID %s: %v", modID, err)
+		return nil, fmt.Errorf("failed to query mod archives: %w", err)
+	}
+	defer rows.Close()
+
+	var modArchives []dtos.ModArchiveDTO
+	for rows.Next() {
+		var archive dtos.ModArchiveDTO
+		if err := rows.Scan(
+			&archive.ID,
+			&archive.Hash,
+			&archive.Type,
+			&archive.NexusGameName,
+			&archive.NexusModID,
+			&archive.NexusFileID,
+			&archive.DirectURL,
+			&archive.Version,
+			&archive.Size,
+			&archive.Description,
+		); err != nil {
+			log.Printf("Error scanning mod archive row for mod ID %s: %v", modID, err)
+			return nil, fmt.Errorf("failed to scan mod archive row: %w", err)
+		}
+		modArchives = append(modArchives, archive)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("Error occurred while iterating over mod archives for mod ID %s: %v", modID, err)
+		return nil, fmt.Errorf("error occurred while iterating over mod archives: %w", err)
+	}
+
+	return modArchives, nil
 }
