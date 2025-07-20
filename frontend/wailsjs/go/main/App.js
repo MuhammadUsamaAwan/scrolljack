@@ -6,6 +6,10 @@ export function DeleteModlist(arg1) {
   return window['go']['main']['App']['DeleteModlist'](arg1);
 }
 
+export function GetModlistById(arg1) {
+  return window['go']['main']['App']['GetModlistById'](arg1);
+}
+
 export function GetModlistImageBase64(arg1, arg2) {
   return window['go']['main']['App']['GetModlistImageBase64'](arg1, arg2);
 }

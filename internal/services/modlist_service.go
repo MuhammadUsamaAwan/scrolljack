@@ -36,7 +36,7 @@ func InsertModlist(ctx context.Context, db *sql.DB, modlistId string, modlist *m
 }
 
 func GetModlists(ctx context.Context, db *sql.DB) ([]*dtos.ModlistDTO, error) {
-	rows, err := db.QueryContext(ctx, `SELECT id, name, author, description, image, game_type, version, is_nsfw, created_at FROM modlists`)
+	rows, err := db.QueryContext(ctx, `SELECT id, name, author, description, image, game_type, version, is_nsfw, website, readme, created_at FROM modlists`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query modlists: %w", err)
 	}
@@ -45,7 +45,7 @@ func GetModlists(ctx context.Context, db *sql.DB) ([]*dtos.ModlistDTO, error) {
 	var modlists []*dtos.ModlistDTO
 	for rows.Next() {
 		var m dtos.ModlistDTO
-		if err := rows.Scan(&m.ID, &m.Name, &m.Author, &m.Description, &m.Image, &m.GameType, &m.Version, &m.IsNSFW, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.Name, &m.Author, &m.Description, &m.Image, &m.GameType, &m.Version, &m.IsNSFW, &m.Website, &m.Readme, &m.CreatedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan modlist row: %w", err)
 		}
 		modlists = append(modlists, &m)
@@ -56,6 +56,20 @@ func GetModlists(ctx context.Context, db *sql.DB) ([]*dtos.ModlistDTO, error) {
 	}
 
 	return modlists, nil
+}
+
+func GetModlistById(ctx context.Context, db *sql.DB, modlistId string) (*dtos.ModlistDTO, error) {
+	row := db.QueryRowContext(ctx, `SELECT id, name, author, description, image, game_type, version, is_nsfw, website, readme, created_at FROM modlists WHERE id = ?`, modlistId)
+
+	var m dtos.ModlistDTO
+	if err := row.Scan(&m.ID, &m.Name, &m.Author, &m.Description, &m.Image, &m.GameType, &m.Version, &m.IsNSFW, &m.Website, &m.Readme, &m.CreatedAt); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to scan modlist: %w", err)
+	}
+
+	return &m, nil
 }
 
 func GetModlistImageBase64(modlistId string, image string) (string, error) {

@@ -9,5 +9,7 @@ type ModlistDTO struct {
 	GameType    string `json:"game_type"`
 	Version     string `json:"version"`
 	IsNSFW      bool   `json:"is_nsfw"`
+	Website     string `json:"website"`
+	Readme      string `json:"readme"`
 	CreatedAt   string `json:"created_at"`
 }

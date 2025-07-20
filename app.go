@@ -167,6 +167,14 @@ func (a *App) GetModlistImageBase64(modlistId string, image string) (string, err
 	return base64Image, nil
 }
 
+func (a *App) GetModlistById(modlistId string) (*dtos.ModlistDTO, error) {
+	modlist, err := services.GetModlistById(a.ctx, db.DB, modlistId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve modlist by ID: %w", err)
+	}
+	return modlist, nil
+}
+
 func (a *App) DeleteModlist(modlistId string) error {
 	if err := services.DeleteModlist(a.ctx, db.DB, modlistId); err != nil {
 		return fmt.Errorf("failed to delete modlist: %w", err)

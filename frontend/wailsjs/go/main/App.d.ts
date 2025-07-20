@@ -4,6 +4,8 @@ import {dtos} from '../models';
 
 export function DeleteModlist(arg1:string):Promise<void>;
 
+export function GetModlistById(arg1:string):Promise<dtos.ModlistDTO>;
+
 export function GetModlistImageBase64(arg1:string,arg2:string):Promise<string>;
 
 export function GetModlists():Promise<Array<dtos.ModlistDTO>>;

@@ -20,25 +20,22 @@ import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { queryClient } from '~/lib/query-client';
-import { modListQueryOptions } from '~/lib/query-options';
+import { modListQueryOptions, modListsQueryOptions } from '~/lib/query-options';
 import { pascalCaseToTitleCase } from '~/lib/utils';
 import { DeleteModlist } from '~/wailsjs/go/main/App';
 
 export const Route = createFileRoute('/modlists/')({
+  component: RouteComponent,
   loader: async () => {
-    const modlists = queryClient.ensureQueryData(modListQueryOptions);
+    const modlists = await queryClient.ensureQueryData(modListsQueryOptions);
     return { modlists };
   },
-  component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { data: initialModlists } = useSuspenseQuery(modListQueryOptions);
+  const { data: initialModlists } = useSuspenseQuery(modListsQueryOptions);
   const { mutateAsync } = useMutation({
     mutationFn: DeleteModlist,
-    meta: {
-      invalidateQueries: modListQueryOptions.queryKey,
-    },
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -54,9 +51,14 @@ function RouteComponent() {
     [initialModlists, searchTerm]
   );
 
-  const handleDeleteModlist = async (modlistId: string) => {
+  const deleteModlist = async (modlistId: string) => {
     await mutateAsync(modlistId);
-    toast.promise(mutateAsync(modlistId), {
+    queryClient.invalidateQueries({ queryKey: modListsQueryOptions.queryKey });
+    queryClient.invalidateQueries({ queryKey: modListQueryOptions(modlistId).queryKey });
+  };
+
+  const handleDeleteModlist = async (modlistId: string) => {
+    toast.promise(deleteModlist(modlistId), {
       loading: 'Deleting modlist this may take a while...',
       success: () => 'Modlist deleted successfully',
       error: error => `Failed to delete modlist: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -104,13 +106,7 @@ function RouteComponent() {
           {filteredModlists.map(modlist => (
             <Card key={modlist.id} className='gap-2 overflow-hidden pt-0 transition-shadow hover:shadow-lg'>
               <Link to='/modlists/$id' params={{ id: modlist.id }}>
-                <ModlistImage
-                  modlistId={modlist.id}
-                  image={modlist.image}
-                  alt={modlist.name}
-                  className='h-48 w-full'
-                  roundedTop={true}
-                />
+                <ModlistImage modlistId={modlist.id} image={modlist.image} alt={modlist.name} className='h-48 w-full' />
               </Link>
               <CardHeader>
                 <div className='flex items-start justify-between'>

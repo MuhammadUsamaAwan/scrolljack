@@ -9,6 +9,8 @@ export namespace dtos {
 	    game_type: string;
 	    version: string;
 	    is_nsfw: boolean;
+	    website: string;
+	    readme: string;
 	    created_at: string;
 	
 	    static createFrom(source: any = {}) {
@@ -25,6 +27,8 @@ export namespace dtos {
 	        this.game_type = source["game_type"];
 	        this.version = source["version"];
 	        this.is_nsfw = source["is_nsfw"];
+	        this.website = source["website"];
+	        this.readme = source["readme"];
 	        this.created_at = source["created_at"];
 	    }
 	}
