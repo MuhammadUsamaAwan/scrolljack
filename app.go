@@ -211,3 +211,11 @@ func (a *App) DownloadFile(path string, name string) error {
 	}
 	return nil
 }
+
+func (a *App) GetModsByProfileId(profileId string) ([]dtos.GroupedMod, error) {
+	groupedMods, err := services.GetModsByProfileId(a.ctx, db.DB, profileId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve mods by profile ID: %w", err)
+	}
+	return groupedMods, nil
+}

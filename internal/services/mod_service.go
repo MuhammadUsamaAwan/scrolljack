@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"scrolljack/internal/db/dtos"
 	"scrolljack/internal/db/models"
 	modlist "scrolljack/internal/types"
 
@@ -124,4 +125,53 @@ func readModlistFile(filePath string) ([]string, error) {
 		}
 	}
 	return lines, scanner.Err()
+}
+
+func GetModsByProfileId(ctx context.Context, db *sql.DB, profileID string) ([]dtos.GroupedMod, error) {
+	query := `
+		SELECT id, profile_id, name, "order", is_separator
+		FROM mods
+		WHERE profile_id = ?
+		ORDER BY "order" ASC
+	`
+	rows, err := db.Query(query, profileID)
+	if err != nil {
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+	defer rows.Close()
+
+	var groupedMods []dtos.GroupedMod
+	var currentGroup *dtos.GroupedMod
+
+	for rows.Next() {
+		var mod dtos.Mod
+		if err := rows.Scan(&mod.ID, &mod.ProfileID, &mod.Name, &mod.Order, &mod.IsSeparator); err != nil {
+			return nil, fmt.Errorf("scan error: %w", err)
+		}
+
+		if mod.IsSeparator {
+			newGroup := dtos.GroupedMod{
+				Separator: mod.Name,
+				Mods:      make([]dtos.Mod, 0),
+			}
+			groupedMods = append(groupedMods, newGroup)
+			currentGroup = &groupedMods[len(groupedMods)-1]
+		} else {
+			if currentGroup == nil {
+				ungrouped := dtos.GroupedMod{
+					Separator: "Ungrouped",
+					Mods:      make([]dtos.Mod, 0),
+				}
+				groupedMods = append(groupedMods, ungrouped)
+				currentGroup = &groupedMods[len(groupedMods)-1]
+			}
+			currentGroup.Mods = append(currentGroup.Mods, mod)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return groupedMods, nil
 }

@@ -9,7 +9,7 @@ export function ProfileFiles({ profileId }: { profileId: string }) {
   const { data, isPending } = useQuery(profileFilesQueryOptions(profileId));
 
   if (isPending) {
-    return <Skeleton className='w-full h-12' />
+    return <Skeleton className='w-full h-8' />;
   }
 
   return (
@@ -20,11 +20,11 @@ export function ProfileFiles({ profileId }: { profileId: string }) {
           type='button'
           className='cursor-pointer'
           onClick={() => {
-           toast.promise(DownloadFile(f.file_path, f.name), {
-            loading: 'Downloading file...',
-            success: 'File downloaded successfully!',
-            error: error => `Error downloading file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-           })
+            toast.promise(DownloadFile(f.file_path, f.name), {
+              loading: 'Downloading file...',
+              success: 'File downloaded successfully!',
+              error: error => `Error downloading file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            });
           }}
         >
           <Badge variant='outline'>{f.name}</Badge>

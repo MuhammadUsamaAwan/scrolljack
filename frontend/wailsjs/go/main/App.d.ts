@@ -13,6 +13,8 @@ export function GetModlistImageBase64(arg1:string,arg2:string):Promise<string>;
 
 export function GetModlists():Promise<Array<dtos.ModlistDTO>>;
 
+export function GetModsByProfileId(arg1:string):Promise<Array<dtos.GroupedMod>>;
+
 export function GetProfileFilesByProfileId(arg1:string):Promise<Array<models.ProfileFile>>;
 
 export function GetProfilesByModlistId(arg1:string):Promise<Array<models.Profile>>;

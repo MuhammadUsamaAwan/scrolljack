@@ -1,5 +1,11 @@
 import { queryOptions } from '@tanstack/react-query';
-import { GetModlistById, GetModlists, GetProfileFilesByProfileId, GetProfilesByModlistId } from '~/wailsjs/go/main/App';
+import {
+  GetModlistById,
+  GetModlists,
+  GetModsByProfileId,
+  GetProfileFilesByProfileId,
+  GetProfilesByModlistId,
+} from '~/wailsjs/go/main/App';
 
 export const modListsQueryOptions = queryOptions({
   queryKey: ['modlists'],
@@ -29,5 +35,13 @@ export const profileFilesQueryOptions = (profileId: string) =>
     queryKey: ['profiles', profileId, 'files'],
     queryFn: async () => {
       return await GetProfileFilesByProfileId(profileId);
+    },
+  });
+
+export const profileModsQueryOptions = (profileId: string) =>
+  queryOptions({
+    queryKey: ['profiles', profileId, 'mods'],
+    queryFn: async () => {
+      return await GetModsByProfileId(profileId);
     },
   });

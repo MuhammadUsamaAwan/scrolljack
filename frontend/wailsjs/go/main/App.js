@@ -22,6 +22,10 @@ export function GetModlists() {
   return window['go']['main']['App']['GetModlists']();
 }
 
+export function GetModsByProfileId(arg1) {
+  return window['go']['main']['App']['GetModsByProfileId'](arg1);
+}
+
 export function GetProfileFilesByProfileId(arg1) {
   return window['go']['main']['App']['GetProfileFilesByProfileId'](arg1);
 }

@@ -3,6 +3,7 @@ import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ModlistInfo } from '~/components/modlist-info';
 import { ProfileFiles } from '~/components/profile-files';
+import { ProfileMods } from '~/components/profile-mods';
 import { SelectProfile } from '~/components/select-profile';
 import { queryClient } from '~/lib/query-client';
 import { modListQueryOptions, profilesQueryOptions } from '~/lib/query-options';
@@ -29,6 +30,7 @@ function RouteComponent() {
       <ModlistInfo modlist={modlist} />
       <SelectProfile profiles={profiles} selectedProfile={selectedProfile} setSelectedProfile={setSelectedProfile} />
       <ProfileFiles profileId={selectedProfile} />
+      <ProfileMods profileId={selectedProfile} />
     </div>
   );
 }
