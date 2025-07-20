@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ModlistInfo } from '~/components/modlist-info';
+import { ProfileFiles } from '~/components/profile-files';
 import { SelectProfile } from '~/components/select-profile';
 import { queryClient } from '~/lib/query-client';
 import { modListQueryOptions, profilesQueryOptions } from '~/lib/query-options';
@@ -27,6 +28,7 @@ function RouteComponent() {
     <div className='container mx-auto space-y-8 px-4 py-10'>
       <ModlistInfo modlist={modlist} />
       <SelectProfile profiles={profiles} selectedProfile={selectedProfile} setSelectedProfile={setSelectedProfile} />
+      <ProfileFiles profileId={selectedProfile} />
     </div>
   );
 }

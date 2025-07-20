@@ -198,3 +198,16 @@ func (a *App) GetProfileFilesByProfileId(profileId string) ([]models.ProfileFile
 	}
 	return profileFiles, nil
 }
+
+func (a *App) DownloadFile(path string, name string) error {
+	downloadsDir, err := utils.GetDownloadDir()
+	if err != nil {
+		return fmt.Errorf("failed to get downloads directory: %w", err)
+	}
+	dstPath := filepath.Join(downloadsDir, name)
+	err = utils.CopyFile(path, dstPath)
+	if err != nil {
+		return fmt.Errorf("failed to copy profile file to downloads directory: %w", err)
+	}
+	return nil
+}
