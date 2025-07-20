@@ -7,14 +7,32 @@ export function ModArchives({ modId }: { modId: string }) {
   const { data: archives, isPending } = useQuery(modArchivesQueryOptions(modId));
 
   if (isPending) {
-    return <Spinner />
+    return <Spinner />;
   }
+
+  const gameSourceFiles = archives?.filter(a => a.type === 'GameFileSourceDownloader, Wabbajack.Lib') ?? [];
+  const otherArchives = archives?.filter(a => a.type !== 'GameFileSourceDownloader, Wabbajack.Lib') ?? [];
 
   return (
     <>
       <div className='mb-2 text-muted-foreground text-sm'>Mod files are from {archives?.length} archive(s)</div>
       <div className='space-y-2'>
-        {archives?.map(a => (
+        {gameSourceFiles.length > 0 && (
+          <div className='space-y-1'>
+            <div className='text-muted-foreground text-sm'>
+              {gameSourceFiles.length} Game Source File{gameSourceFiles.length > 1 ? 's' : ''}
+            </div>
+            {gameSourceFiles.map(
+              a =>
+                a.description && (
+                  <div key={a.id} className='text-muted-foreground text-sm'>
+                    {a.description}
+                  </div>
+                )
+            )}
+          </div>
+        )}
+        {otherArchives.map(a => (
           <div className='space-y-1' key={a.id}>
             {a.type === 'NexusDownloader, Wabbajack.Lib' ? (
               <div className='flex flex-wrap gap-2'>
@@ -47,8 +65,6 @@ export function ModArchives({ modId }: { modId: string }) {
                   <Badge variant='outline'>Manual Download</Badge>
                 </a>
               </div>
-            ) : a.type === 'GameFileSourceDownloader, Wabbajack.Lib' ? (
-              <div className='text-muted-foreground text-sm'>Game File Source File</div>
             ) : (
               <a href={a.direct_url!} target='_blank' rel='noopener noreferrer'>
                 Direct Download
