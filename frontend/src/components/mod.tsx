@@ -1,5 +1,6 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import { cn } from '~/lib/utils';
+import { DetectFomodOptions } from '~/wailsjs/go/main/App';
 import { dtos } from '~/wailsjs/go/models';
 import { ModArchives } from './mod-archives';
 import { ModFiles } from './mod-files';
@@ -22,6 +23,7 @@ export function Mod({ mod }: { mod: dtos.ModDTO }) {
             <ModFiles modId={mod.id} />
           </CollapsibleContent>
         </Collapsible>
+        <button type='button' className='underline text-sm text-muted-foreground cursor-pointer' onClick={() => DetectFomodOptions(mod.id)}>Detect Fomod Options</button>
       </CollapsibleContent>
     </Collapsible>
   );

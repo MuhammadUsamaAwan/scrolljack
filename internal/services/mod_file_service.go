@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -14,6 +16,7 @@ import (
 	"scrolljack/internal/utils"
 
 	"github.com/google/uuid"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modlist.Modlist, baseModlistPath string) ([]models.ModFile, error) {
@@ -183,4 +186,54 @@ func GetModFilesByModId(ctx context.Context, db *sql.DB, modID string) ([]dtos.M
 	}
 
 	return modFiles, nil
+}
+
+func DetectFomodOptions(ctx context.Context, db *sql.DB, modId string) (string, error) {
+	result, err := runtime.OpenFileDialog(ctx, runtime.OpenDialogOptions{
+		Title: "Select a mod archive (zip, rar, 7z)",
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "Mod Archive",
+				Pattern:     "*.zip;*.rar;*.7z",
+			},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to open file dialog: %w", err)
+	}
+	if result == "" {
+		return "", nil
+	}
+
+	appDir, err := utils.GetAppDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get app directory: %w", err)
+	}
+	tempDir := filepath.Join(appDir, "temp")
+	log.Printf("[DEBUG] Extracting archive to: %s\n", tempDir)
+	if err := utils.ExtractArchive(result, tempDir); err != nil {
+		return "", fmt.Errorf("failed to extract file: %w", err)
+	}
+
+	fomodDir := filepath.Join(tempDir, "fomod")
+	if _, err := os.Stat(fomodDir); os.IsNotExist(err) {
+		return "", fmt.Errorf("FOMOD directory not found: %s", fomodDir)
+	}
+	moduleConfigPath := filepath.Join(fomodDir, "ModuleConfig.xml")
+	if _, err := os.Stat(moduleConfigPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("no ModuleConfig.xml found: %s", moduleConfigPath)
+	}
+
+	_, err = GetModFilesByModId(ctx, db, modId)
+	if err != nil {
+		return "", fmt.Errorf("failed to get mod files for mod ID %s: %w", modId, err)
+	}
+
+	// TODO: Implement FOMOD option detection logic here
+
+	if err := os.RemoveAll(tempDir); err != nil {
+		return "", fmt.Errorf("failed to delete temporary directory: %w", err)
+	}
+
+	return "", nil
 }

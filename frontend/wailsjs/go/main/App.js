@@ -6,6 +6,10 @@ export function DeleteModlist(arg1) {
   return window['go']['main']['App']['DeleteModlist'](arg1);
 }
 
+export function DetectFomodOptions(arg1) {
+  return window['go']['main']['App']['DetectFomodOptions'](arg1);
+}
+
 export function DownloadFile(arg1, arg2) {
   return window['go']['main']['App']['DownloadFile'](arg1, arg2);
 }

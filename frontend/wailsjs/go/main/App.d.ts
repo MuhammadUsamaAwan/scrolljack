@@ -5,6 +5,8 @@ import {models} from '../models';
 
 export function DeleteModlist(arg1:string):Promise<void>;
 
+export function DetectFomodOptions(arg1:string):Promise<string>;
+
 export function DownloadFile(arg1:string,arg2:string):Promise<void>;
 
 export function GetModArchivesByModId(arg1:string):Promise<Array<dtos.ModArchiveDTO>>;
