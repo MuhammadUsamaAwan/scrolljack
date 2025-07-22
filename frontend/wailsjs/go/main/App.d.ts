@@ -3,7 +3,7 @@
 import {dtos} from '../models';
 import {models} from '../models';
 
-export function ApplyBinaryPatch(arg1:string,arg2:string):Promise<void>;
+export function ApplyBinaryPatch(arg1:string,arg2:string):Promise<Record<string, string>>;
 
 export function DeleteModlist(arg1:string):Promise<void>;
 

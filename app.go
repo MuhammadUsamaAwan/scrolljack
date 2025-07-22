@@ -244,9 +244,15 @@ func (a *App) DetectFomodOptions(modId string) (string, error) {
 	return fomodOptions, nil
 }
 
-func (a *App) ApplyBinaryPatch(patchFilePath string, name string) error {
-	if err := services.BinaryPatch(a.ctx, patchFilePath, name); err != nil {
-		return fmt.Errorf("failed to apply binary patch: %w", err)
+func (a *App) ApplyBinaryPatch(patchFilePath string, name string) map[string]string {
+	srcBase64, dstBase64, err := services.BinaryPatch(a.ctx, patchFilePath, name)
+	if err != nil {
+		return map[string]string{
+			"error": err.Error(),
+		}
 	}
-	return nil
+	return map[string]string{
+		"original": srcBase64,
+		"patched":  dstBase64,
+	}
 }
