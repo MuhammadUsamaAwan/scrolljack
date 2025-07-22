@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Spinner } from '~/components/ui/spinner';
 import { modFilesQueryOptions } from '~/lib/query-options';
 import { formatSize } from '~/lib/utils';
-import { DownloadFile } from '~/wailsjs/go/main/App';
+import { ApplyBinaryPatch, DownloadFile } from '~/wailsjs/go/main/App';
 
 export function ModFiles({ modId }: { modId: string }) {
   const { data: files, isPending } = useQuery(modFilesQueryOptions(modId));
@@ -30,7 +30,22 @@ export function ModFiles({ modId }: { modId: string }) {
           Download
         </button>
       )}
-      {' '}({formatSize(f.size)}) ({f.type})
+      {f.patch_file_path && (
+        <button
+          onClick={() => {
+            toast.promise(ApplyBinaryPatch(f.patch_file_path!, f.path.split('\\').pop()!), {
+              loading: 'Applying patch...',
+              success: 'Patch applied successfully and saved to the downloads folder!',
+              error: error => `Error applying patch: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            });
+          }}
+          type='button'
+          className='cursor-pointer underline'
+        >
+          Apply Patch
+        </button>
+      )}{' '}
+      ({formatSize(f.size)}) ({f.type})
     </div>
   ));
 }
