@@ -92,6 +92,7 @@ func runMigrations() {
 			"source_file_path" text,
 			"patch_file_path" text,
 			"bsa_files" text,
+			"size" integer NOT NULL,
 			FOREIGN KEY ("mod_id") REFERENCES "mods"("id") ON UPDATE no action ON DELETE cascade
 		);
 

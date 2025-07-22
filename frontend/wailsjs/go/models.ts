@@ -95,6 +95,7 @@ export namespace dtos {
 	    source_file_path?: string;
 	    patch_file_path?: string;
 	    bsa_files?: string;
+	    size: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new ModFileDTO(source);
@@ -109,6 +110,7 @@ export namespace dtos {
 	        this.source_file_path = source["source_file_path"];
 	        this.patch_file_path = source["patch_file_path"];
 	        this.bsa_files = source["bsa_files"];
+	        this.size = source["size"];
 	    }
 	}
 	export class ModlistDTO {

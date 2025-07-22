@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Spinner } from '~/components/ui/spinner';
 import { modFilesQueryOptions } from '~/lib/query-options';
+import { formatSize } from '~/lib/utils';
 import { DownloadFile } from '~/wailsjs/go/main/App';
 
 export function ModFiles({ modId }: { modId: string }) {
@@ -29,7 +30,7 @@ export function ModFiles({ modId }: { modId: string }) {
           Download
         </button>
       )}
-      ({f.type})
+      {' '}({formatSize(f.size)}) ({f.type})
     </div>
   ));
 }

@@ -24,14 +24,22 @@ export function Mod({ mod }: { mod: dtos.ModDTO }) {
             <ModFiles modId={mod.id} />
           </CollapsibleContent>
         </Collapsible>
-        <button type='button' className='underline text-sm text-muted-foreground cursor-pointer' onClick={async () => {
-          try {
-            const options = await DetectFomodOptions(mod.id)
-            toast.success(options)
-          } catch (error) {
-            toast.error(`Failed to detect Fomod options: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
-        }}>Detect Fomod Options</button>
+        <button
+          type='button'
+          className='underline text-sm text-muted-foreground cursor-pointer'
+          onClick={async () => {
+            try {
+              const options = await DetectFomodOptions(mod.id);
+              toast.success(options);
+            } catch (error) {
+              toast.error(
+                `Failed to detect Fomod options: ${error instanceof Error ? error.message : 'Unknown error'}`
+              );
+            }
+          }}
+        >
+          Detect Fomod Options
+        </button>
       </CollapsibleContent>
     </Collapsible>
   );

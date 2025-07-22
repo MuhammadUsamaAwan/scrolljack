@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '~/components/ui/badge';
 import { Spinner } from '~/components/ui/spinner';
 import { modArchivesQueryOptions } from '~/lib/query-options';
+import { formatSize } from '~/lib/utils';
 
 export function ModArchives({ modId }: { modId: string }) {
   const { data: archives, isPending } = useQuery(modArchivesQueryOptions(modId));
@@ -71,6 +72,7 @@ export function ModArchives({ modId }: { modId: string }) {
               </a>
             )}
             {a.description && <div className='text-muted-foreground text-sm'>{a.description}</div>}
+            {a.size && <div className='text-muted-foreground text-sm'>Size: {formatSize(a.size)}</div>}
           </div>
         ))}
       </div>

@@ -8,4 +8,5 @@ type ModFileDTO struct {
 	SourceFilePath *string `json:"source_file_path"`
 	PatchFilePath  *string `json:"patch_file_path"`
 	BsaFiles       *string `json:"bsa_files"`
+	Size           int64   `json:"size"`
 }

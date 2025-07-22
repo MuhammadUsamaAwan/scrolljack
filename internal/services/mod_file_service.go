@@ -79,6 +79,7 @@ func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modli
 					SourceFilePath: sourceFilePath,
 					PatchFilePath:  patchFilePath,
 					BsaFiles:       utils.ToNullString(&bsaFilesStr),
+					Size:           mf.Size,
 				}
 				modFiles = append(modFiles, modFile)
 			}
@@ -113,7 +114,7 @@ func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modli
 			valueArgs    []any
 		)
 		for _, file := range chunk {
-			valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?)")
+			valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 			valueArgs = append(valueArgs,
 				file.ID,
 				file.ModID,
@@ -123,12 +124,13 @@ func InsertModFiles(ctx context.Context, db *sql.DB, mods []models.Mod, m *modli
 				file.SourceFilePath,
 				file.PatchFilePath,
 				file.BsaFiles,
+				file.Size,
 			)
 		}
 
 		query := fmt.Sprintf(`
         INSERT INTO mod_files (
-            id, mod_id, hash, type, path, source_file_path, patch_file_path, bsa_files
+            id, mod_id, hash, type, path, source_file_path, patch_file_path, bsa_files, size
         ) VALUES %s`,
 			strings.Join(valueStrings, ","),
 		)
@@ -157,7 +159,7 @@ func extractPaths(states []*modlist.FileState) []string {
 
 func GetModFilesByModId(ctx context.Context, db *sql.DB, modID string) ([]dtos.ModFileDTO, error) {
 	query := `
-		SELECT id, hash, type, path, source_file_path, patch_file_path, bsa_files
+		SELECT id, hash, type, path, source_file_path, patch_file_path, bsa_files, size
 		FROM mod_files
 		WHERE mod_id = $1
 	`
@@ -172,7 +174,7 @@ func GetModFilesByModId(ctx context.Context, db *sql.DB, modID string) ([]dtos.M
 	for rows.Next() {
 		var file dtos.ModFileDTO
 		if err := rows.Scan(&file.ID, &file.Hash, &file.Type, &file.Path,
-			&file.SourceFilePath, &file.PatchFilePath, &file.BsaFiles); err != nil {
+			&file.SourceFilePath, &file.PatchFilePath, &file.BsaFiles, &file.Size); err != nil {
 			return nil, fmt.Errorf("failed to scan mod file row: %w", err)
 		}
 		modFiles = append(modFiles, file)
