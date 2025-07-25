@@ -14,6 +14,11 @@ export function ModArchives({ modId }: { modId: string }) {
   const gameSourceFiles = archives?.filter(a => a.type === 'GameFileSourceDownloader, Wabbajack.Lib') ?? [];
   const otherArchives = archives?.filter(a => a.type !== 'GameFileSourceDownloader, Wabbajack.Lib') ?? [];
 
+
+  if (archives?.length === 0) {
+    return null
+  }
+
   return (
     <>
       <div className='mb-2 text-muted-foreground text-sm'>Mod files are from {archives?.length} archive(s)</div>

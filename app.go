@@ -237,7 +237,7 @@ func (a *App) GetModFilesByModId(modId string) ([]dtos.ModFileDTO, error) {
 }
 
 func (a *App) DetectFomodOptions(modId string) (string, error) {
-	fomodOptions, err := services.DetectFomodOptions(a.ctx, db.DB, modId)
+	fomodOptions, err := services.EnhancedDetectFomodOptions(a.ctx, db.DB, modId)
 	if err != nil {
 		return "", fmt.Errorf("failed to get file differences: %w", err)
 	}
