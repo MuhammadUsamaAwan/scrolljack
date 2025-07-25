@@ -43,13 +43,25 @@ func DetectFomodOptions(ctx context.Context, db *sql.DB, modId string) (string, 
 		return "", fmt.Errorf("failed to get mod files for mod ID %s: %w", modId, err)
 	}
 
-	// TODO: Implement FOMOD option detection logic here
+	fomodDir, moduleConfigPath, err := utils.FindFomodDirectory(tempDir)
+	if err != nil {
+		go cleanupTempDir(tempDir)
+		return "", fmt.Errorf("failed to find FOMOD directory: %w", err)
+	}
 
-	go func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			log.Printf("Failed to delete temporary directory %s: %v", tempDir, err)
-		}
-	}()
+	if fomodDir == "" || moduleConfigPath == "" {
+		go cleanupTempDir(tempDir)
+		fmt.Println("No FOMOD directory or ModuleConfig.xml found in archive")
+		return "No FOMOD configuration found in this mod archive", nil
+	}
+
+	go cleanupTempDir(tempDir)
 
 	return "", nil
+}
+
+func cleanupTempDir(tempDir string) {
+	if err := os.RemoveAll(tempDir); err != nil {
+		log.Printf("Failed to delete temporary directory %s: %v", tempDir, err)
+	}
 }
