@@ -4,8 +4,8 @@ Scrolljack is a desktop application built with [Wails](https://wails.io/) that t
 
 ## Installation
 
-- **For Windows:** [Download EXE](https://github.com/MuhammadUsamaAwan/scrolljack/blob/main/build/bin/scrolljack.exe)
-- **For Linux:** [Download Binary](https://github.com/MuhammadUsamaAwan/scrolljack/blob/main/build/bin/scrolljack)
+- **For Windows:** [Download EXE](https://github.com/MuhammadUsamaAwan/scrolljack/releases/download/v0.1.0/scrolljack.exe)
+- **For Linux:** [Download Binary](https://github.com/MuhammadUsamaAwan/scrolljack/releases/download/v0.1.0/scrolljack)
 
 ## Installation (Development)
 
